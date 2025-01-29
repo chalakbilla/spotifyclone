@@ -23,7 +23,8 @@ let fetched_url2 = "";
 async function getSongs(folder) {
     currFolder = folder; // Update the current folder
     let response;
-    let primaryUrl = `https://github.com/chalakbilla/spotifyclone/blob/main/songs/${folder}/`;
+    let proxy = "https://cors-anywhere.herokuapp.com/";  // CORS proxy URL
+    let primaryUrl = `${proxy}https://github.com/chalakbilla/spotifyclone/blob/main/songs/${folder}/`;
     let fallbackUrl = `./${folder}/`;
 
     // Attempt to fetch from the primary URL
@@ -50,6 +51,10 @@ async function getSongs(folder) {
             return []; // Return an empty array if both fetches fail
         }
     }
+
+    // Rest of the code remains the same...
+}
+
 
     // Parse the response and extract song links
     let div = document.createElement("div");
