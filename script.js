@@ -23,7 +23,7 @@ let fetched_url2 = "";
 async function getSongs(folder) {
     currFolder = folder; // Update the current folder
     let response;
-    let primaryUrl = `./songs/${folder}/`;
+    let primaryUrl = `https://github.com/chalakbilla/spotifyclone/blob/main/songs/${folder}/`;
     let fallbackUrl = `./${folder}/`;
 
     // Attempt to fetch from the primary URL
