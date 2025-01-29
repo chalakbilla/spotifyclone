@@ -23,8 +23,8 @@ let fetched_url2 = "";
 async function getSongs(folder) {
     currFolder = folder; // Update the current folder
     let response;
-    let primaryUrl = `http://127.0.0.1:3000/${folder}/`;
-    let fallbackUrl = `http://127.0.0.1:3000/spotify%20clone/${folder}/`;
+    let primaryUrl = `/songs/${folder}/`;
+    let fallbackUrl = `/${folder}/`;
 
     // Attempt to fetch from the primary URL
     let fetchResponse = await fetch(primaryUrl);
@@ -133,7 +133,7 @@ const playMusic = async (track) => {
 
         try {
             // Fallback to the default 'songs' directory if the first URL fails
-            const fallbackURL = `http://127.0.0.1:3000/${currFolder}/${formattedTrack}`;
+            const fallbackURL = `songs/${currFolder}/${formattedTrack}`;
             console.log(`Attempting to play from fallback: ${fallbackURL}`);
 
             const response = await fetch(fallbackURL, { method: 'HEAD' });
@@ -227,7 +227,7 @@ const playMusic = async (track) => {
 
 async function displayAlbums() {
     console.log(fetched_url2);
-    fetched_url2 = `${fetched_url2}songs`;
+    fetched_url2 = `${fetched_url2}`;
     console.log(fetched_url2);
 
     let a = await fetch(fetched_url2);
@@ -261,7 +261,7 @@ async function displayAlbums() {
                 <div class="play">
                     <img src="play.svg" alt="">
                 </div>
-                <img src="/songs/${folder}/cover.jpg" alt="card-image">
+                <img src="songs/${folder}/cover.jpg" alt="card-image">
                 <h2>${response.title}</h2>
                 <p>${response.description}</p>
             </div>`;
@@ -292,7 +292,7 @@ async function main() {
 
 
     //get the list of all the songs
-    await getSongs("songs/ncs");
+    await getSongs("/ncs");
     console.log(songs);
 
     // Select the <ul> element inside .songList
