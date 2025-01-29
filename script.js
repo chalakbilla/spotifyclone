@@ -23,8 +23,8 @@ let fetched_url2 = "";
 async function getSongs(folder) {
     currFolder = folder; // Update the current folder
     let response;
-    let primaryUrl = `/songs/${folder}/`;
-    let fallbackUrl = `/${folder}/`;
+    let primaryUrl = `./songs/${folder}/`;
+    let fallbackUrl = `./${folder}/`;
 
     // Attempt to fetch from the primary URL
     let fetchResponse = await fetch(primaryUrl);
