@@ -1,6 +1,6 @@
 console.log('Lets Write Javascript');
 let currentSong = new Audio;
-let songs;
+let songs = []; // Declare songs at a higher scope
 let currFolder;
 
 function secondsToMinutesSeconds(seconds) {
@@ -52,15 +52,11 @@ async function getSongs(folder) {
         }
     }
 
-    // Rest of the code remains the same...
-}
-
-
     // Parse the response and extract song links
     let div = document.createElement("div");
     div.innerHTML = response;
     let links = div.getElementsByTagName("a");
-    let songs = [];
+    songs = []; // Clear the songs array
 
     // Extract .mp3 links
     for (let link of links) {
@@ -101,19 +97,12 @@ async function getSongs(folder) {
     console.log(fetched_url2);
 }
 
-
-
-
-
 const playMusic = async (track) => {
     try {
         // Normalize the track name to handle spaces and special characters for URLs
-
         const formattedTrack = track.replace(/ /g, '%20').replace(/,/g, '%20');
 
-
         console.log(formattedTrack);
-
 
         // Construct the URL using the fetched_url variable and the specified track
         let audioURL = `${fetched_url}/${formattedTrack}`;  // Use the value of fetched_url variable
@@ -157,9 +146,6 @@ const playMusic = async (track) => {
     }
 };
 
-
-
-
 async function displayAlbums() {
     console.log(fetched_url2);
     fetched_url2 = `${fetched_url2}`;
@@ -169,21 +155,15 @@ async function displayAlbums() {
 
     console.log(a);
 
-
     let response = await a.text();
     let div = document.createElement("div");
     div.innerHTML = response;
-    // let anchors = div.getElementsByTagName("a");
-    // console.log(anchors)
     let anchors = Array.from(div.getElementsByTagName("a"));
     let cardContainer = document.querySelector(".cardContainer");
 
-
-
-    let array = Array.from(anchors)
+    let array = Array.from(anchors);
     for (let index = 0; index < array.length; index++) {
         const e = array[index];
-
 
         if (e.href.includes("/songs")) {
             let folder = e.href.split("/").slice(-2)[0];
@@ -200,42 +180,28 @@ async function displayAlbums() {
                 <h2>${response.title}</h2>
                 <p>${response.description}</p>
             </div>`;
-
         }
-    };
+    }
 
     // Load the playlist whenever card is clicked
     Array.from(document.getElementsByClassName("card")).forEach(e => {
         console.log(e);
         e.addEventListener("click", async (item) => {
             console.log("Fetching Songs");
-            let songs = await getSongs(`songs/${item.currentTarget.dataset.folder}`);
+            await getSongs(`songs/${item.currentTarget.dataset.folder}`);
         });
     });
-
 }
 
-
-
-
-
-
-
-
-
 async function main() {
-
-
     //get the list of all the songs
     await getSongs("/ncs");
     console.log(songs);
 
     // Select the <ul> element inside .songList
-
     await displayAlbums();
 
-
-    // Add event listener to the play button  (play is an id)
+    // Add event listener to the play button (play is an id)
     play.addEventListener("click", () => {
         if (currentSong.paused) {
             currentSong.play();
@@ -251,7 +217,6 @@ async function main() {
         document.querySelector(".songtime").innerHTML = `${secondsToMinutesSeconds(currentSong.currentTime)}/${secondsToMinutesSeconds(currentSong.duration)}`;
         document.querySelector(".circle").style.left = (currentSong.currentTime / currentSong.duration) * 100 + "%";
     });
-
 
     document.querySelector(".seekbar").addEventListener("click", (e) => {
         const seekbar = e.currentTarget.getBoundingClientRect(); // Get the dimensions of the seekbar
@@ -275,16 +240,14 @@ async function main() {
         document.querySelector(".left").style.left = "-120%";
     });
 
-
     // Event Listener For Next and previous
-
     previous.addEventListener("click", () => {
         console.log("Previous clicked");
         console.log(currentSong);
         let index = songs.indexOf(currentSong.src.split("/").pop());
 
         if ((index - 1) >= 0) {
-            playMusic(songs[index - 1])
+            playMusic(songs[index - 1]);
         }
     });
 
@@ -293,7 +256,7 @@ async function main() {
         let index = songs.indexOf(currentSong.src.split("/").slice(-1)[0]);
 
         if ((index + 1) < songs.length - 1) {
-            playMusic(songs[index + 1])
+            playMusic(songs[index + 1]);
         }
     });
 
@@ -305,18 +268,12 @@ async function main() {
 
     // Load the playlist whenever card is clicked
     Array.from(document.getElementsByClassName("card")).forEach(e => {
-        console.log(e)
+        console.log(e);
         e.addEventListener("click", async item => {
-            console.log(item, item.currentTarget.dataset)
-            songs = await getSongs(`songs/${item.currentTarget.dataset.folder}`)
-        })
-    })
-
-
-
-
+            console.log(item, item.currentTarget.dataset);
+            await getSongs(`songs/${item.currentTarget.dataset.folder}`);
+        });
+    });
 }
 
 main();
-// 2:43
-  Uncaught SyntaxError: Identifier 'songs' has already been declared (at script.js:63:9)
