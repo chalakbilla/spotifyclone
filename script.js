@@ -73,37 +73,56 @@ const playMusic = async (track) => {
 
 // Function to fetch and display albums
 async function displayAlbums() {
-    let albumListUrl = `${GITHUB_BASE_URL}/albums.json`;  // JSON file with album details
-    try {
-        let response = await fetch(albumListUrl);
-        if (!response.ok) throw new Error("Failed to fetch albums");
+    let fetched_url = "https://raw.githubusercontent.com/chalakbilla/spotifyclone/main/songs/";
+    let response = await fetch(fetched_url);
+    let text = await response.text();
 
-        let albums = await response.json();
-        let cardContainer = document.querySelector(".cardContainer");
-        cardContainer.innerHTML = "";
+    let div = document.createElement("div");
+    div.innerHTML = text;
+    let links = Array.from(div.getElementsByTagName("a"));
 
-        albums.forEach(album => {
-            cardContainer.innerHTML += `
-                <div data-folder="${album.folder}" class="card">
-                    <div class="play">
-                        <img src="play.svg" alt="">
-                    </div>
-                    <img src="${GITHUB_BASE_URL}/${album.folder}/cover.jpg" alt="Album Cover">
-                    <h2>${album.title}</h2>
-                    <p>${album.description}</p>
-                </div>`;
-        });
+    let cardContainer = document.querySelector(".cardContainer");
 
-        // Attach event listeners to load songs when clicking an album
-        Array.from(document.getElementsByClassName("card")).forEach(e => {
-            e.addEventListener("click", async item => {
-                await getSongs(item.currentTarget.dataset.folder);
-            });
-        });
-    } catch (error) {
-        console.error("Error fetching albums:", error);
+    for (let link of links) {
+        if (link.href.includes("/songs/")) {
+            let folder = link.href.split("/").slice(-2)[0];
+
+            try {
+                // Fetch info.json from each folder
+                let infoUrl = `https://raw.githubusercontent.com/chalakbilla/spotifyclone/main/songs/${folder}/info.json`;
+                let infoResponse = await fetch(infoUrl);
+                
+                if (!infoResponse.ok) {
+                    console.warn(`Skipping ${folder}, info.json not found.`);
+                    continue;
+                }
+
+                let info = await infoResponse.json();
+
+                cardContainer.innerHTML += `
+                    <div data-folder="${folder}" class="card">
+                        <div class="play">
+                            <img src="img/play.svg" alt="">
+                        </div>
+                        <img src="songs/${folder}/cover.jpg" alt="card-image">
+                        <h2>${info.title}</h2>
+                        <p>${info.description}</p>
+                    </div>`;
+            } catch (error) {
+                console.error(`Error loading album ${folder}:`, error);
+            }
+        }
     }
+
+    // Add click events to load album songs
+    document.querySelectorAll(".card").forEach(card => {
+        card.addEventListener("click", async () => {
+            let folder = card.getAttribute("data-folder");
+            await getSongs(folder); // Fetch songs from selected album
+        });
+    });
 }
+
 
 // Main function
 async function main() {
