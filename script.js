@@ -1,136 +1,242 @@
 console.log('Lets Write Javascript');
-let currentSong = new Audio();
-let songs = [];  // Initialize an empty array to store songs
-let currFolder = "";
+let currentSong = new Audio;
+let songs;
+let currFolder;
 
-// Convert seconds to MM:SS format
 function secondsToMinutesSeconds(seconds) {
-    if (isNaN(seconds) || seconds < 0) return "00:00";
+    if (isNaN(seconds) || seconds < 0) {
+        return "00:00";
+    }
+
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = Math.floor(seconds % 60);
-    return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
+
+    const formattedMinutes = String(minutes).padStart(2, '0');
+    const formattedSeconds = String(remainingSeconds).padStart(2, '0');
+
+    return `${formattedMinutes}:${formattedSeconds}`;
 }
 
-// GitHub raw content base URL
-const GITHUB_BASE_URL = "https://raw.githubusercontent.com/chalakbilla/spotifyclone/main/songs";
+let fetched_url = "";
+let fetched_url2 = "";
 
-// Function to fetch song list manually
 async function getSongs(folder) {
-    currFolder = folder;  
-    let songListUrl = `${GITHUB_BASE_URL}/${folder}/songs.json`;  // JSON file containing song names
+    currFolder = folder; // Update the current folder
+    let response;
+    let proxy = "https://cors-anywhere.herokuapp.com/";  // CORS proxy URL
+    let primaryUrl = `${proxy}https://github.com/chalakbilla/spotifyclone/blob/main/songs/${folder}/`;
+    let fallbackUrl = `./${folder}/`;
 
-    try {
-        let response = await fetch(songListUrl);
-        if (!response.ok) throw new Error("Failed to fetch song list");
+    // Attempt to fetch from the primary URL
+    let fetchResponse = await fetch(primaryUrl);
 
-        let data = await response.json();
-        songs = data.songs;  // Assign fetched songs
+    if (fetchResponse.ok) {
+        // If the fetch from the primary URL is successful, get the response text
+        response = await fetchResponse.text();
+        fetched_url = primaryUrl;  // Update the fetched_url with primaryUrl
+    } else {
+        // If the primary URL fetch fails, log the error and try the fallback URL
+        console.log("Primary URL failed. Trying fallback...");
 
-        let songUL = document.querySelector(".songList ul");
-        songUL.innerHTML = "";  // Clear previous list
+        // Attempt to fetch from the fallback URL
+        fetchResponse = await fetch(fallbackUrl);
 
-        for (const song of songs) {
-            songUL.innerHTML += `<li>
-                                    <img src="img/music.svg" class="invert" alt="">
-                                    <div class="info">
-                                        <div>${song.replaceAll("%20", " ")}</div>
-                                        <div class="singer">Chalak Billa</div>
-                                    </div>
-                                    <div class="playnow">
-                                        <span>Play Now</span>
-                                        <img src="img/play.svg" alt="">
-                                    </div>
-                                </li>`;
+        if (fetchResponse.ok) {
+            // If the fetch from the fallback URL is successful, get the response text
+            response = await fetchResponse.text();
+            fetched_url = fallbackUrl;  // Update the fetched_url with fallbackUrl
+        } else {
+            // If both fetches fail, log the error and return an empty array
+            console.log("Can't fetch from both primary and fallback URLs.");
+            return []; // Return an empty array if both fetches fail
         }
-
-        // Attach event listeners to play songs
-        Array.from(songUL.getElementsByTagName("li")).forEach(e => {
-            e.addEventListener("click", () => {
-                playMusic(e.querySelector(".info").firstElementChild.innerHTML);
-            });
-        });
-    } catch (error) {
-        console.error("Error fetching songs:", error);
     }
+
+    // Rest of the code remains the same...
 }
 
-// Function to play a song
+
+    // Parse the response and extract song links
+    let div = document.createElement("div");
+    div.innerHTML = response;
+    let links = div.getElementsByTagName("a");
+    let songs = [];
+
+    // Extract .mp3 links
+    for (let link of links) {
+        if (link.href.endsWith(".mp3")) {
+            songs.push(link.href.split(`/${folder}/`)[1]);
+        }
+    }
+
+    // Get the song list container
+    let songUL = document.querySelector(".songList ul");
+
+    // Clear the <ul> to ensure it's empty before adding new songs
+    songUL.innerHTML = ""; // Clear the list
+
+    // Loop through the songs and add each as a <li> to the <ul>
+    for (const song of songs) {
+        songUL.innerHTML += `<li>
+                            <img src="img/music.svg" class="invert" alt="">
+                            <div class="info">
+                                <div>${song.replaceAll(/%20/g, " ")}</div>
+                                <div class="singer">Chalak Billa</div>
+                            </div>
+                            <div class="playnow">
+                                <span>Play Now</span>
+                                <img src="img/play.svg" alt="">
+                            </div>
+                        </li>`;
+    }
+
+    // Attach an event listener to each song
+    Array.from(songUL.getElementsByTagName("li")).forEach(e => {
+        e.addEventListener("click", () => {
+            console.log(e.querySelector(".info").firstElementChild.innerHTML);
+            playMusic(e.querySelector(".info").firstElementChild.innerHTML);
+        });
+    });
+    fetched_url2 = fetched_url.replace(`/${folder}/`, '/');
+    console.log(fetched_url2);
+}
+
+
+
+
+
 const playMusic = async (track) => {
     try {
-        let formattedTrack = track.replace(/ /g, '%20');
-        let audioURL = `${GITHUB_BASE_URL}/${currFolder}/${formattedTrack}`;
-        console.log(`Playing: ${audioURL}`);
+        // Normalize the track name to handle spaces and special characters for URLs
 
+        const formattedTrack = track.replace(/ /g, '%20').replace(/,/g, '%20');
+
+
+        console.log(formattedTrack);
+
+
+        // Construct the URL using the fetched_url variable and the specified track
+        let audioURL = `${fetched_url}/${formattedTrack}`;  // Use the value of fetched_url variable
+        console.log(audioURL)
+        // Attempt to check if the URL is reachable or valid
+        const response = await fetch(audioURL, { method: 'HEAD' });
+        if (!response.ok) {
+            throw new Error(`Track not found in folder ${currFolder}`);
+        }
+
+        // If the track is found, use the constructed URL
+        console.log(`Playing: ${audioURL}`);
         currentSong.src = audioURL;
+
+        // Play the track
         await currentSong.play();
-        document.querySelector(".songinfo").innerHTML = track.replace("%20", " ");
-        document.querySelector(".songtime").innerHTML = "00:00 / 00:00";
         play.src = "img/pause.svg";
+        document.querySelector(".songinfo").innerHTML = decodeURI(track).replace(/%20/g, " ").replace(/_/g, " ");
+        document.querySelector(".songtime").innerHTML = "00:00 / 00:00";
     } catch (error) {
-        console.error("Error playing track:", error);
+        console.error('Error in playMusic function:', error);
+
+        try {
+            // Fallback to the default 'songs' directory if the first URL fails
+            const fallbackURL = `songs/${currFolder}/${formattedTrack}`;
+            console.log(`Attempting to play from fallback: ${fallbackURL}`);
+
+            const response = await fetch(fallbackURL, { method: 'HEAD' });
+            if (!response.ok) {
+                throw new Error(`Track not found in fallback folder ${currFolder}`);
+            }
+
+            currentSong.src = fallbackURL;
+            await currentSong.play();
+            play.src = "img/pause.svg";
+            document.querySelector(".songinfo").innerHTML = decodeURI(track).replace(/%20/g, " ").replace(/_/g, " ");
+            document.querySelector(".songtime").innerHTML = "00:00 / 00:00";
+        } catch (error) {
+            console.error('Error in fallback URL:', error);
+        }
     }
 };
 
-// Function to fetch and display albums
+
+
+
 async function displayAlbums() {
-    let fetched_url = "https://raw.githubusercontent.com/chalakbilla/spotifyclone/main/songs/";
-    let response = await fetch(fetched_url);
-    let text = await response.text();
+    console.log(fetched_url2);
+    fetched_url2 = `${fetched_url2}`;
+    console.log(fetched_url2);
 
+    let a = await fetch(fetched_url2);
+
+    console.log(a);
+
+
+    let response = await a.text();
     let div = document.createElement("div");
-    div.innerHTML = text;
-    let links = Array.from(div.getElementsByTagName("a"));
-
+    div.innerHTML = response;
+    // let anchors = div.getElementsByTagName("a");
+    // console.log(anchors)
+    let anchors = Array.from(div.getElementsByTagName("a"));
     let cardContainer = document.querySelector(".cardContainer");
 
-    for (let link of links) {
-        if (link.href.includes("/songs/")) {
-            let folder = link.href.split("/").slice(-2)[0];
 
-            try {
-                // Fetch info.json from each folder
-                let infoUrl = `https://raw.githubusercontent.com/chalakbilla/spotifyclone/main/songs/${folder}/info.json`;
-                let infoResponse = await fetch(infoUrl);
-                
-                if (!infoResponse.ok) {
-                    console.warn(`Skipping ${folder}, info.json not found.`);
-                    continue;
-                }
 
-                let info = await infoResponse.json();
+    let array = Array.from(anchors)
+    for (let index = 0; index < array.length; index++) {
+        const e = array[index];
 
-                cardContainer.innerHTML += `
-                    <div data-folder="${folder}" class="card">
-                        <div class="play">
-                            <img src="img/play.svg" alt="">
-                        </div>
-                        <img src="songs/${folder}/cover.jpg" alt="card-image">
-                        <h2>${info.title}</h2>
-                        <p>${info.description}</p>
-                    </div>`;
-            } catch (error) {
-                console.error(`Error loading album ${folder}:`, error);
-            }
+
+        if (e.href.includes("/songs")) {
+            let folder = e.href.split("/").slice(-2)[0];
+            // Get the metadata of the folder
+            let a = await fetch(`${fetched_url2}/${folder}/info.json`);
+            let response = await a.json();
+            console.log(response);
+            cardContainer.innerHTML += `
+            <div data-folder="${folder}" class="card">
+                <div class="play">
+                    <img src="play.svg" alt="">
+                </div>
+                <img src="songs/${folder}/cover.jpg" alt="card-image">
+                <h2>${response.title}</h2>
+                <p>${response.description}</p>
+            </div>`;
+
         }
-    }
+    };
 
-    // Add click events to load album songs
-    document.querySelectorAll(".card").forEach(card => {
-        card.addEventListener("click", async () => {
-            let folder = card.getAttribute("data-folder");
-            await getSongs(folder); // Fetch songs from selected album
+    // Load the playlist whenever card is clicked
+    Array.from(document.getElementsByClassName("card")).forEach(e => {
+        console.log(e);
+        e.addEventListener("click", async (item) => {
+            console.log("Fetching Songs");
+            let songs = await getSongs(`songs/${item.currentTarget.dataset.folder}`);
         });
     });
+
 }
 
 
-// Main function
-async function main() {
-    await displayAlbums();  // Load album details
-    await getSongs("ncs");  // Load default song folder
 
-    // Play/Pause event listener
-    document.getElementById("play").addEventListener("click", () => {
+
+
+
+
+
+
+async function main() {
+
+
+    //get the list of all the songs
+    await getSongs("/ncs");
+    console.log(songs);
+
+    // Select the <ul> element inside .songList
+
+    await displayAlbums();
+
+
+    // Add event listener to the play button  (play is an id)
+    play.addEventListener("click", () => {
         if (currentSong.paused) {
             currentSong.play();
             play.src = "img/pause.svg";
@@ -140,29 +246,77 @@ async function main() {
         }
     });
 
-    // Seekbar event
-    document.querySelector(".seekbar").addEventListener("click", (e) => {
-        const seekbar = e.currentTarget.getBoundingClientRect();
-        const clickPosition = (e.clientX - seekbar.left) / seekbar.width;
-        document.querySelector(".circle").style.left = (clickPosition * 100) + "%";
-        currentSong.currentTime = clickPosition * currentSong.duration;
+    currentSong.addEventListener("timeupdate", () => {
+        console.log(currentSong.currentTime, currentSong.duration);
+        document.querySelector(".songtime").innerHTML = `${secondsToMinutesSeconds(currentSong.currentTime)}/${secondsToMinutesSeconds(currentSong.duration)}`;
+        document.querySelector(".circle").style.left = (currentSong.currentTime / currentSong.duration) * 100 + "%";
     });
 
-    // Volume Control
-    document.querySelector(".range input").addEventListener("change", (e) => {
+
+    document.querySelector(".seekbar").addEventListener("click", (e) => {
+        const seekbar = e.currentTarget.getBoundingClientRect(); // Get the dimensions of the seekbar
+        const clickPosition = (e.clientX - seekbar.left) / seekbar.width; // Calculate the position of the click relative to the seekbar
+
+        // Move the circle to the clicked position
+        document.querySelector(".circle").style.left = (clickPosition * 100) + "%";
+
+        // Update the audio playback time immediately
+        if (currentSong && currentSong.duration) {
+            currentSong.currentTime = clickPosition * currentSong.duration;
+        }
+    });
+
+    // Event Listener for Hamburger
+    document.querySelector(".hamburger").addEventListener("click", () => {
+        document.querySelector(".left").style.left = "0";
+    });
+
+    document.querySelector(".close").addEventListener("click", () => {
+        document.querySelector(".left").style.left = "-120%";
+    });
+
+
+    // Event Listener For Next and previous
+
+    previous.addEventListener("click", () => {
+        console.log("Previous clicked");
+        console.log(currentSong);
+        let index = songs.indexOf(currentSong.src.split("/").pop());
+
+        if ((index - 1) >= 0) {
+            playMusic(songs[index - 1])
+        }
+    });
+
+    next.addEventListener("click", () => {
+        console.log("Next clicked");
+        let index = songs.indexOf(currentSong.src.split("/").slice(-1)[0]);
+
+        if ((index + 1) < songs.length - 1) {
+            playMusic(songs[index + 1])
+        }
+    });
+
+    // Add an event to volume
+    document.querySelector(".range").getElementsByTagName("input")[0].addEventListener("change", (e) => {
+        console.log("Setting Volume to :", e.target.value);
         currentSong.volume = parseInt(e.target.value) / 100;
     });
 
-    // Next and Previous Song Controls
-    document.getElementById("previous").addEventListener("click", () => {
-        let index = songs.indexOf(currentSong.src.split("/").pop());
-        if (index > 0) playMusic(songs[index - 1]);
-    });
+    // Load the playlist whenever card is clicked
+    Array.from(document.getElementsByClassName("card")).forEach(e => {
+        console.log(e)
+        e.addEventListener("click", async item => {
+            console.log(item, item.currentTarget.dataset)
+            songs = await getSongs(`songs/${item.currentTarget.dataset.folder}`)
+        })
+    })
 
-    document.getElementById("next").addEventListener("click", () => {
-        let index = songs.indexOf(currentSong.src.split("/").pop());
-        if (index < songs.length - 1) playMusic(songs[index + 1]);
-    });
+
+
+
 }
 
 main();
+// 2:43
+  Uncaught SyntaxError: Identifier 'songs' has already been declared (at script.js:63:9)
