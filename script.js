@@ -73,6 +73,8 @@ async function getSongs(folder) {
 
     // Loop through the songs and add each as a <li> to the <ul>
     for (const song of songs) {
+    // Ensure that the song is defined and is a string before calling replaceAll
+        if (typeof song === 'string') {
         songUL.innerHTML += `<li>
                             <img src="img/music.svg" class="invert" alt="">
                             <div class="info">
@@ -84,6 +86,7 @@ async function getSongs(folder) {
                                 <img src="img/play.svg" alt="">
                             </div>
                         </li>`;
+        }
     }
 
     // Attach an event listener to each song
